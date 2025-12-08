@@ -37,6 +37,11 @@ function PublicLessons() {
   const [lessonToMakePrivate, setLessonToMakePrivate] = useState<{id: number, name: string, topics: any[]} | null>(null);
   const [isMakingPrivate, setIsMakingPrivate] = useState(false);
 
+  // Pagination state
+  const INITIAL_DISPLAY_COUNT = 6;
+  const LOAD_MORE_COUNT = 6;
+  const [displayCount, setDisplayCount] = useState(INITIAL_DISPLAY_COUNT);
+
   // Fetch public lesson plans
   const {
     data: publicLessonPlansData,
@@ -101,6 +106,21 @@ function PublicLessons() {
     const matchesMineFilter = showOnlyMine ? plan.userId === user?.id : true;
     return matchesSearch && matchesMineFilter;
   });
+
+  // Reset display count when filters change
+  useEffect(() => {
+    setDisplayCount(INITIAL_DISPLAY_COUNT);
+  }, [searchQuery, showOnlyMine]);
+
+  // Get the lessons to display based on current display count
+  const visibleLessonPlans = filteredLessonPlans.slice(0, displayCount);
+  const hasMoreLessons = filteredLessonPlans.length > displayCount;
+  const remainingCount = filteredLessonPlans.length - displayCount;
+
+  // Handle loading more lessons
+  const handleLoadMore = () => {
+    setDisplayCount(prev => prev + LOAD_MORE_COUNT);
+  };
 
   // Format date for display
   const formatDate = (dateString: string | null) => {
@@ -295,7 +315,7 @@ function PublicLessons() {
             </div>
           ) : filteredLessonPlans.length > 0 ? (
             <div className="space-y-4">
-              {filteredLessonPlans.map((plan) => {
+              {visibleLessonPlans.map((plan) => {
                 const isOwnPlan = plan.userId === user?.id;
                 return (
                   <div 
@@ -366,6 +386,22 @@ function PublicLessons() {
                   </div>
                 );
               })}
+              
+              {/* View More Button */}
+              {hasMoreLessons && (
+                <div className="flex flex-col items-center justify-center pt-6 pb-2 border-t mt-4">
+                  <p className="text-sm text-muted-foreground mb-3">
+                    Showing {visibleLessonPlans.length} of {filteredLessonPlans.length} lesson plans
+                  </p>
+                  <Button
+                    variant="outline"
+                    onClick={handleLoadMore}
+                    className="min-w-[200px]"
+                  >
+                    View More ({remainingCount} remaining)
+                  </Button>
+                </div>
+              )}
             </div>
           ) : (
             <div className="text-center py-4 sm:py-6">
