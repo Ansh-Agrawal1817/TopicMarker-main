@@ -1,15 +1,33 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
-  <!-- Main bookmark shape - white -->
-  <path d="M14 6C14 4.34315 15.3431 3 17 3H47C48.6569 3 50 4.34315 50 6V56.5858C50 58.8457 47.3457 60.0858 45.6569 58.3969L32 44.74L18.3431 58.3969C16.6543 60.0858 14 58.8457 14 56.5858V6Z" fill="white"/>
+  <!-- Book body - bigger -->
+  <rect x="4" y="4" width="56" height="56" rx="4" fill="#1a1a1a"/>
   
-  <!-- Inner dark area -->
-  <path d="M18 9C18 7.89543 18.8954 7 20 7H44C45.1046 7 46 7.89543 46 9V49L32 37L18 49V9Z" fill="#1a1a1a"/>
+  <!-- Book spine -->
+  <rect x="4" y="4" width="8" height="56" rx="3" fill="#2a2a2a"/>
   
-  <!-- Stylized "T" for Topic - white on dark -->
-  <rect x="22" y="15" width="20" height="3.5" rx="1.75" fill="white"/>
-  <rect x="30" y="15" width="4" height="18" rx="2" fill="white"/>
+  <!-- Bookmark ribbon -->
+  <path d="M44 4V32L50 26L56 32V4" fill="white"/>
   
-  <!-- Marker dot accent - white -->
-  <circle cx="44" cy="11" r="5" fill="white"/>
-  <circle cx="44" cy="11" r="2.5" fill="#1a1a1a"/>
+  <!-- Page lines at bottom -->
+  <rect x="14" y="50" width="40" height="3" rx="1.5" fill="white" opacity="0.9"/>
+  <rect x="14" y="55" width="34" height="2" rx="1" fill="white" opacity="0.6"/>
+  
+  <!-- AI Circuit nodes - bigger -->
+  <circle cx="24" cy="28" r="7" fill="#6366F1"/>
+  <circle cx="40" cy="20" r="5" fill="#8B5CF6"/>
+  <circle cx="34" cy="40" r="5" fill="#A855F7"/>
+  
+  <!-- AI Circuit connections -->
+  <line x1="24" y1="28" x2="40" y2="20" stroke="#6366F1" stroke-width="3"/>
+  <line x1="24" y1="28" x2="34" y2="40" stroke="#8B5CF6" stroke-width="3"/>
+  <line x1="40" y1="20" x2="34" y2="40" stroke="#A855F7" stroke-width="2"/>
+  
+  <!-- AI Sparkle on main node -->
+  <path d="M24 28L26 22L28 28L26 34Z" fill="white"/>
+  <path d="M24 28L18 30L24 32L30 30Z" fill="white"/>
+  
+  <!-- Glow centers -->
+  <circle cx="24" cy="28" r="3" fill="white"/>
+  <circle cx="40" cy="20" r="2" fill="white" opacity="0.9"/>
+  <circle cx="34" cy="40" r="2" fill="white" opacity="0.9"/>
 </svg>
