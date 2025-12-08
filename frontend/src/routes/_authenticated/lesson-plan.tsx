@@ -198,6 +198,17 @@ function LessonPlan() {
     queryKey: ['search-topics', searchQuery],
     queryFn: async () => {
       console.log('Fetching topics hierarchy for:', searchQuery);
+      
+      // Check if we already have a valid saved hierarchy - don't overwrite it!
+      const storeState = useLessonPlanStore.getState();
+      const hasExistingHierarchy = storeState.usingSavedHierarchy || storeState.hasValidHierarchy;
+      const existingHierarchy = storeState.topicsHierarchy;
+      
+      if (hasExistingHierarchy && existingHierarchy && existingHierarchy.length > 0) {
+        console.log('Already have a valid saved hierarchy, skipping API fetch to preserve it');
+        return { status: 'success', data: { topics: '' }, skipped: true };
+      }
+      
       const result = await searchTopics(searchQuery, 3);
 
       // If the search is successful, parse and store the hierarchy in the Zustand store
@@ -209,11 +220,17 @@ function LessonPlan() {
           if (jsonMatch && jsonMatch[1]) {
             const parsedTopics: Topic[] = JSON.parse(jsonMatch[1]);
 
-            // Only update the store if we actually got topics
+            // Only update the store if we actually got topics AND we don't already have a saved hierarchy
             if (parsedTopics && Array.isArray(parsedTopics) && parsedTopics.length > 0) {
-              // Store the parsed hierarchy in the Zustand store
-              setTopicsHierarchy(parsedTopics);
-              console.log('Stored topics hierarchy in Zustand store:', parsedTopics);
+              // Double-check we still don't have a saved hierarchy (in case it was set during the fetch)
+              const currentState = useLessonPlanStore.getState();
+              if (!currentState.usingSavedHierarchy && !currentState.hasValidHierarchy) {
+                // Store the parsed hierarchy in the Zustand store
+                setTopicsHierarchy(parsedTopics);
+                console.log('Stored topics hierarchy in Zustand store:', parsedTopics);
+              } else {
+                console.log('Saved hierarchy was set during fetch, not overwriting');
+              }
 
               // If we don't have a main topic set yet, use the search query
               if (!mainTopic) {
@@ -851,10 +868,14 @@ function LessonPlan() {
         setTimeout(() => {
           window.dispatchEvent(new Event('resize'));
 
+          // Check current store state (not stale closure value) for hierarchy
+          const currentStoreState = useLessonPlanStore.getState();
+          const currentHierarchy = currentStoreState.topicsHierarchy;
+          const hasSavedHierarchy = currentStoreState.usingSavedHierarchy || currentStoreState.hasValidHierarchy;
+
           // We should already have a reconstructed hierarchy from the lesson plan topics,
-          // but if for some reason we don't, trigger a search to fetch it
-          // Only do this if it's not a public lesson
-          if (!topicsHierarchy || !Array.isArray(topicsHierarchy) || topicsHierarchy.length === 0) {
+          // Only fetch if we truly don't have one AND we're not using a saved hierarchy
+          if (!hasSavedHierarchy && (!currentHierarchy || !Array.isArray(currentHierarchy) || currentHierarchy.length === 0)) {
             if (!isPublic) {
               console.log('No hierarchy found after loading lesson plan, fetching hierarchy for:', response.mainTopic);
               refetchTopics();
@@ -862,7 +883,7 @@ function LessonPlan() {
               console.log('No hierarchy found for public lesson, but not fetching to preserve saved state');
             }
           } else {
-            console.log('Using hierarchy from store after loading lesson plan:', topicsHierarchy);
+            console.log('Using hierarchy from store after loading lesson plan:', currentHierarchy);
           }
         }, 200);
       }
