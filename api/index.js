@@ -188,7 +188,7 @@ export default async function handler(req, res) {
         const id = parseInt(checkPublicMatch[1]);
         const plans = await db`SELECT id, is_public FROM lesson_plans WHERE id = ${id} LIMIT 1`;
         if (!plans.length) return res.status(200).json({ exists: false, isPublic: false });
-        return res.status(200).json({ exists: true, isPublic: plans[0].is_public });
+        return res.status(200).json({ exists: true, isPublic: Boolean(plans[0].is_public) });
       }
 
       // Auth required for other lesson plan routes
@@ -287,16 +287,27 @@ function snakeToCamel(str) {
 
 // Convert object keys from snake_case to camelCase
 function toCamelCase(obj) {
+  // Handle null/undefined
+  if (obj === null || obj === undefined) {
+    return obj;
+  }
+  // Preserve Date objects - convert to ISO string for JSON serialization
+  if (obj instanceof Date) {
+    return obj.toISOString();
+  }
+  // Handle arrays
   if (Array.isArray(obj)) {
     return obj.map(toCamelCase);
   }
-  if (obj !== null && typeof obj === 'object') {
+  // Handle plain objects (not Date, RegExp, etc.)
+  if (typeof obj === 'object' && obj.constructor === Object) {
     return Object.keys(obj).reduce((acc, key) => {
       const camelKey = snakeToCamel(key);
       acc[camelKey] = toCamelCase(obj[key]);
       return acc;
     }, {});
   }
+  // Return primitives and other types as-is
   return obj;
 }
 
