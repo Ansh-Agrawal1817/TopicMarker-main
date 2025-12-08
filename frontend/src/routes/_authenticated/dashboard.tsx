@@ -129,8 +129,15 @@ function Dashboard() {
     );
   }, [lessonPlans, searchQuery]);
 
-  // Get the first 5 lesson plans for display
-  const displayedLessonPlans = filteredLessonPlans.slice(0, 5);
+  // State for showing all lesson plans or just first few
+  const [showAllLessonPlans, setShowAllLessonPlans] = useState(false);
+  
+  // Get lesson plans for display (show first 5 or all based on toggle)
+  const displayedLessonPlans = showAllLessonPlans 
+    ? filteredLessonPlans 
+    : filteredLessonPlans.slice(0, 5);
+  
+  const hasMoreLessonPlans = filteredLessonPlans.length > 5;
 
   // Format date for display
   const formatDate = (dateString: string | null) => {
@@ -338,8 +345,8 @@ function Dashboard() {
             </div>
           ) : filteredLessonPlans.length > 0 ? (
             <div className="space-y-4">
-              {displayedLessonPlans.map((plan) => (
-                <div key={plan.id} className="flex flex-col sm:flex-row sm:items-start sm:justify-between border-b pb-3 last:border-0 gap-2 sm:gap-0">
+              {displayedLessonPlans.map((plan, index) => (
+                <div key={plan.id} className={`flex flex-col sm:flex-row sm:items-start sm:justify-between pb-3 gap-2 sm:gap-0 ${index !== displayedLessonPlans.length - 1 ? 'border-b' : ''}`}>
                   <div className="max-w-full sm:max-w-[60%]">
                     <h3 className="font-medium text-sm sm:text-base truncate">{plan.name}</h3>
                     <div className="flex flex-wrap items-center text-xs sm:text-sm text-muted-foreground gap-1 sm:gap-0">
@@ -410,6 +417,19 @@ function Dashboard() {
                   </div>
                 </div>
               ))}
+              
+              {/* Show More/Less Button */}
+              {hasMoreLessonPlans && (
+                <Button
+                  variant="ghost"
+                  onClick={() => setShowAllLessonPlans(!showAllLessonPlans)}
+                  className="w-full mt-2 text-xs sm:text-sm text-muted-foreground hover:text-primary"
+                >
+                  {showAllLessonPlans 
+                    ? `Show Less (showing ${filteredLessonPlans.length} lessons)` 
+                    : `Show All ${filteredLessonPlans.length} Lesson Plans`}
+                </Button>
+              )}
             </div>
           ) : (
             <div className="text-center py-4 sm:py-6">
