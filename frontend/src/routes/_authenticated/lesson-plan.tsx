@@ -188,6 +188,13 @@ function LessonPlan() {
   const [refinementError, setRefinementError] = useState<string | null>(null);
   const editorRef = useRef<HTMLTextAreaElement>(null);
 
+  // Resizable panel state
+  const [leftPanelWidth, setLeftPanelWidth] = useState(250); // in pixels
+  const [rightPanelWidth, setRightPanelWidth] = useState(280); // in pixels
+  const [isResizingLeft, setIsResizingLeft] = useState(false);
+  const [isResizingRight, setIsResizingRight] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
   // Query for searching topics
   const {
     data: topicsData,
@@ -198,6 +205,17 @@ function LessonPlan() {
     queryKey: ['search-topics', searchQuery],
     queryFn: async () => {
       console.log('Fetching topics hierarchy for:', searchQuery);
+      
+      // Check if we already have a valid saved hierarchy - don't overwrite it!
+      const storeState = useLessonPlanStore.getState();
+      const hasExistingHierarchy = storeState.usingSavedHierarchy || storeState.hasValidHierarchy;
+      const existingHierarchy = storeState.topicsHierarchy;
+      
+      if (hasExistingHierarchy && existingHierarchy && existingHierarchy.length > 0) {
+        console.log('Already have a valid saved hierarchy, skipping API fetch to preserve it');
+        return { status: 'success', data: { topics: '' }, skipped: true };
+      }
+      
       const result = await searchTopics(searchQuery, 3);
 
       // If the search is successful, parse and store the hierarchy in the Zustand store
@@ -209,11 +227,17 @@ function LessonPlan() {
           if (jsonMatch && jsonMatch[1]) {
             const parsedTopics: Topic[] = JSON.parse(jsonMatch[1]);
 
-            // Only update the store if we actually got topics
+            // Only update the store if we actually got topics AND we don't already have a saved hierarchy
             if (parsedTopics && Array.isArray(parsedTopics) && parsedTopics.length > 0) {
-              // Store the parsed hierarchy in the Zustand store
-              setTopicsHierarchy(parsedTopics);
-              console.log('Stored topics hierarchy in Zustand store:', parsedTopics);
+              // Double-check we still don't have a saved hierarchy (in case it was set during the fetch)
+              const currentState = useLessonPlanStore.getState();
+              if (!currentState.usingSavedHierarchy && !currentState.hasValidHierarchy) {
+                // Store the parsed hierarchy in the Zustand store
+                setTopicsHierarchy(parsedTopics);
+                console.log('Stored topics hierarchy in Zustand store:', parsedTopics);
+              } else {
+                console.log('Saved hierarchy was set during fetch, not overwriting');
+              }
 
               // If we don't have a main topic set yet, use the search query
               if (!mainTopic) {
@@ -851,10 +875,14 @@ function LessonPlan() {
         setTimeout(() => {
           window.dispatchEvent(new Event('resize'));
 
+          // Check current store state (not stale closure value) for hierarchy
+          const currentStoreState = useLessonPlanStore.getState();
+          const currentHierarchy = currentStoreState.topicsHierarchy;
+          const hasSavedHierarchy = currentStoreState.usingSavedHierarchy || currentStoreState.hasValidHierarchy;
+
           // We should already have a reconstructed hierarchy from the lesson plan topics,
-          // but if for some reason we don't, trigger a search to fetch it
-          // Only do this if it's not a public lesson
-          if (!topicsHierarchy || !Array.isArray(topicsHierarchy) || topicsHierarchy.length === 0) {
+          // Only fetch if we truly don't have one AND we're not using a saved hierarchy
+          if (!hasSavedHierarchy && (!currentHierarchy || !Array.isArray(currentHierarchy) || currentHierarchy.length === 0)) {
             if (!isPublic) {
               console.log('No hierarchy found after loading lesson plan, fetching hierarchy for:', response.mainTopic);
               refetchTopics();
@@ -862,7 +890,7 @@ function LessonPlan() {
               console.log('No hierarchy found for public lesson, but not fetching to preserve saved state');
             }
           } else {
-            console.log('Using hierarchy from store after loading lesson plan:', topicsHierarchy);
+            console.log('Using hierarchy from store after loading lesson plan:', currentHierarchy);
           }
         }, 200);
       }
@@ -1051,6 +1079,72 @@ function LessonPlan() {
       window.removeEventListener('orientationchange', checkMobileView);
     };
   }, [mobileActivePanel]);
+
+  // Handle panel resizing with mouse events
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!containerRef.current) return;
+      
+      const containerRect = containerRef.current.getBoundingClientRect();
+      
+      if (isResizingLeft) {
+        const newWidth = e.clientX - containerRect.left;
+        // Constrain between 150px and 400px
+        setLeftPanelWidth(Math.max(150, Math.min(400, newWidth)));
+      }
+      
+      if (isResizingRight) {
+        // Calculate from the right edge
+        const newWidth = containerRect.right - e.clientX;
+        // Constrain between 200px and 450px
+        setRightPanelWidth(Math.max(200, Math.min(450, newWidth)));
+      }
+    };
+
+    const handleMouseUp = () => {
+      setIsResizingLeft(false);
+      setIsResizingRight(false);
+      document.body.style.cursor = 'default';
+      document.body.style.userSelect = 'auto';
+    };
+
+    if (isResizingLeft || isResizingRight) {
+      document.body.style.cursor = 'col-resize';
+      document.body.style.userSelect = 'none';
+      window.addEventListener('mousemove', handleMouseMove);
+      window.addEventListener('mouseup', handleMouseUp);
+    }
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isResizingLeft, isResizingRight]);
+
+  // Resize handle component
+  const ResizeHandle = ({ position, onMouseDown }: { position: 'left' | 'right', onMouseDown: () => void }) => (
+    <div
+      className={`absolute top-0 ${position === 'left' ? '-right-2' : '-left-2'} w-4 h-full cursor-col-resize group z-20 
+        flex items-center justify-center`}
+      onMouseDown={(e) => {
+        e.preventDefault();
+        onMouseDown();
+      }}
+    >
+      {/* Visible drag handle bar */}
+      <div className={`w-1 h-full bg-transparent group-hover:bg-primary/40 transition-colors duration-150`} />
+      {/* Center grip indicator */}
+      <div className={`absolute top-1/2 -translate-y-1/2 left-1/2 -translate-x-1/2
+        w-4 h-16 rounded-md bg-border/60 group-hover:bg-primary/60 transition-all duration-150 
+        flex items-center justify-center shadow-sm opacity-50 group-hover:opacity-100`}>
+        <div className="flex flex-col gap-1">
+          <div className="w-1 h-1 rounded-full bg-muted-foreground/70" />
+          <div className="w-1 h-1 rounded-full bg-muted-foreground/70" />
+          <div className="w-1 h-1 rounded-full bg-muted-foreground/70" />
+        </div>
+      </div>
+    </div>
+  );
 
   // Initial load effect - run once when component mounts
   useEffect(() => {
@@ -2245,14 +2339,20 @@ function LessonPlan() {
         </div>
       )}
 
-      <div className="flex flex-col md:flex-row gap-4 w-full">
+      <div ref={containerRef} className="flex flex-col md:flex-row w-full relative">
         {/* Left sidebar for topic hierarchy */}
-      <div className={`
-        ${isLeftSidebarCollapsed ? 'w-14' : 'w-full md:w-1/5 lg:w-1/6'}
-        ${isEditorFullscreen || isPreviewFullscreen ? 'hidden md:hidden' : ''}
-        ${isMobileView && mobileActivePanel !== 'left' ? 'hidden' : ''}
-        transition-all duration-300
-      `}>
+      <div 
+        className={`
+          ${isEditorFullscreen || isPreviewFullscreen ? 'hidden md:hidden' : ''}
+          ${isMobileView && mobileActivePanel !== 'left' ? 'hidden' : ''}
+          ${isResizingLeft || isResizingRight ? '' : 'transition-all duration-150'} relative flex-shrink-0
+        `}
+        style={{ 
+          width: isMobileView ? '100%' : isLeftSidebarCollapsed ? '56px' : `${leftPanelWidth}px`,
+          minWidth: isLeftSidebarCollapsed ? '56px' : '150px',
+          maxWidth: isMobileView ? '100%' : '400px'
+        }}
+      >
         <Card className={`${isMobileView ? 'h-[70vh]' : 'h-full'} overflow-hidden border-border`}>
           <div className="border-b border-border flex items-center justify-between p-2 bg-muted/30">
             {!isLeftSidebarCollapsed && (
@@ -2391,16 +2491,30 @@ function LessonPlan() {
             </div>
           )}
         </Card>
+        {/* Resize handle for left panel */}
+        {!isMobileView && !isLeftSidebarCollapsed && !isEditorFullscreen && !isPreviewFullscreen && (
+          <ResizeHandle position="left" onMouseDown={() => setIsResizingLeft(true)} />
+        )}
       </div>
 
       {/* Right sidebar for MDX generation options */}
       {showRightSidebar && (
-        <div className={`
-          ${isRightSidebarCollapsed ? 'w-14' : 'w-full md:w-1/5 lg:w-1/6'}
-          ${isEditorFullscreen || isPreviewFullscreen ? 'md:w-1/6 lg:w-1/7' : ''}
-          ${isMobileView && mobileActivePanel !== 'right' ? 'hidden' : ''}
-          transition-all duration-300
-        `}>
+        <div 
+          className={`
+            ${isEditorFullscreen || isPreviewFullscreen ? 'md:w-1/6 lg:w-1/7' : ''}
+            ${isMobileView && mobileActivePanel !== 'right' ? 'hidden' : ''}
+            ${isResizingLeft || isResizingRight ? '' : 'transition-all duration-150'} relative flex-shrink-0 order-last
+          `}
+          style={{ 
+            width: isMobileView ? '100%' : isRightSidebarCollapsed ? '56px' : `${rightPanelWidth}px`,
+            minWidth: isRightSidebarCollapsed ? '56px' : '200px',
+            maxWidth: isMobileView ? '100%' : '450px'
+          }}
+        >
+          {/* Resize handle for right panel */}
+          {!isMobileView && !isRightSidebarCollapsed && !isEditorFullscreen && !isPreviewFullscreen && (
+            <ResizeHandle position="right" onMouseDown={() => setIsResizingRight(true)} />
+          )}
           <Card className={`${isMobileView ? 'h-[70vh]' : 'h-full'} overflow-hidden border-border`}>
             <div className="border-b border-border flex items-center justify-between p-2 bg-muted/30">
               {!isRightSidebarCollapsed && (
@@ -2480,6 +2594,42 @@ function LessonPlan() {
 
                     <CardContent className="overflow-auto flex-1 pt-2">
                       <div className="space-y-4">
+                        {/* Selected Text Display - also shown in Generation Mode */}
+                        {selectedEditorText && !isReadOnly && (
+                          <div className="space-y-2 p-3 bg-amber-500/10 border border-amber-500/30 rounded-lg">
+                            <div className="flex items-center justify-between">
+                              <label className="text-sm font-medium flex items-center gap-2">
+                                <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+                                Text Selected (Switch to Refinement to edit):
+                              </label>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-6 px-2 text-xs"
+                                onClick={() => setShowGenerationOptions(false)}
+                              >
+                                Refine →
+                              </Button>
+                            </div>
+                            <div 
+                              className="bg-amber-500/5 border border-amber-500/20 rounded-md p-2 text-sm max-h-[60px] overflow-y-auto cursor-pointer hover:bg-amber-500/10 transition-colors"
+                              onClick={() => {
+                                if (editorRef.current && selectionStart !== null && selectionEnd !== null) {
+                                  editorRef.current.focus();
+                                  editorRef.current.setSelectionRange(selectionStart, selectionEnd);
+                                }
+                              }}
+                              title="Click to re-highlight in editor"
+                            >
+                              <pre className="whitespace-pre-wrap font-mono text-xs break-words text-muted-foreground">
+                                {selectedEditorText.length > 200 
+                                  ? selectedEditorText.substring(0, 200) + '...' 
+                                  : selectedEditorText}
+                              </pre>
+                            </div>
+                          </div>
+                        )}
+
                         {generationMethod === 'crawl' && (
                           <div className="space-y-4">
                             <div className="bg-muted/30 rounded-lg p-3 text-sm text-muted-foreground">
@@ -2703,6 +2853,67 @@ function LessonPlan() {
                       <div className="space-y-4">
                         {!isReadOnly ? (
                           <>
+                            {/* Selected Text Display */}
+                            {selectedEditorText && (
+                              <div className="space-y-2">
+                                <div className="flex items-center justify-between">
+                                  <label className="text-sm font-medium flex items-center gap-2">
+                                    <span className="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+                                    Selected Text:
+                                  </label>
+                                  <div className="flex gap-1">
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className="h-6 px-2 text-xs"
+                                      onClick={() => {
+                                        if (editorRef.current && selectionStart !== null && selectionEnd !== null) {
+                                          editorRef.current.focus();
+                                          editorRef.current.setSelectionRange(selectionStart, selectionEnd);
+                                        }
+                                      }}
+                                      title="Re-highlight in editor"
+                                    >
+                                      Show
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className="h-6 px-2 text-xs text-destructive hover:text-destructive"
+                                      onClick={() => {
+                                        setSelectedEditorText('');
+                                        setOriginalSelectedText('');
+                                        setSelectionStart(null);
+                                        setSelectionEnd(null);
+                                      }}
+                                      title="Clear selection"
+                                    >
+                                      Clear
+                                    </Button>
+                                  </div>
+                                </div>
+                                <div 
+                                  className="bg-primary/10 border border-primary/30 rounded-lg p-3 text-sm max-h-[120px] overflow-y-auto cursor-pointer hover:bg-primary/15 transition-colors"
+                                  onClick={() => {
+                                    if (editorRef.current && selectionStart !== null && selectionEnd !== null) {
+                                      editorRef.current.focus();
+                                      editorRef.current.setSelectionRange(selectionStart, selectionEnd);
+                                    }
+                                  }}
+                                  title="Click to re-highlight in editor"
+                                >
+                                  <pre className="whitespace-pre-wrap font-mono text-xs break-words">
+                                    {selectedEditorText.length > 500 
+                                      ? selectedEditorText.substring(0, 500) + '...' 
+                                      : selectedEditorText}
+                                  </pre>
+                                </div>
+                                <p className="text-xs text-muted-foreground">
+                                  {selectedEditorText.length} characters selected • Click the box to re-highlight
+                                </p>
+                              </div>
+                            )}
+
                             <div className="space-y-2">
                               <label className="text-sm font-medium">
                                 Refinement Question/Prompt:
@@ -2724,7 +2935,9 @@ function LessonPlan() {
                                     : 'Refine the selected text using specific URLs as references.'}
                               </p>
                               <p className="mt-2 text-xs">
-                                Select text in the editor and enter a question or prompt above.
+                                {selectedEditorText 
+                                  ? 'Your selection is shown above. Enter a refinement prompt below.'
+                                  : 'Select text in the editor and enter a question or prompt above.'}
                                 {isTextRefined && ' The refined text will remain highlighted until you accept or revert the changes.'}
                               </p>
                             </div>
@@ -2900,7 +3113,7 @@ function LessonPlan() {
 
       {/* Main content area for MDX */}
       {!showEditor && !isEditorFullscreen && !isPreviewFullscreen && (
-        <div className={`flex-1 ${isMobileView && mobileActivePanel !== 'main' ? 'hidden' : ''}`}>
+        <div className={`flex-1 min-w-0 mx-2 ${isMobileView && mobileActivePanel !== 'main' ? 'hidden' : ''}`}>
           <Card className={`${isMobileView ? 'h-[70vh]' : 'h-full'}`}>
             <CardHeader>
               <CardTitle>
@@ -2948,7 +3161,7 @@ function LessonPlan() {
       {/* MDX Editor with Preview */}
       {showEditor && (
         <div className={`
-          ${isEditorFullscreen || isPreviewFullscreen ? 'w-full h-full flex-grow' : 'flex-1'}
+          ${isEditorFullscreen || isPreviewFullscreen ? 'w-full h-full flex-grow' : 'flex-1 min-w-0 mx-2'}
           ${isMobileView && mobileActivePanel !== 'main' ? 'hidden' : ''}
         `}>
           <div className={`flex flex-col ${isMobileView ? 'h-[70vh]' : 'h-full'} border rounded-lg bg-card shadow-sm overflow-hidden`}>
@@ -3025,6 +3238,13 @@ function LessonPlan() {
                 value={mdxContent}
                 onChange={handleContentChange}
                 onSelect={isReadOnly ? undefined : handleEditorSelect}
+                onMouseUp={isReadOnly ? undefined : handleEditorSelect}
+                onKeyUp={isReadOnly ? undefined : (e) => {
+                  // Capture selection on keyboard shortcuts (Ctrl+A, Shift+Arrow, etc.)
+                  if (e.shiftKey || e.ctrlKey || e.metaKey) {
+                    handleEditorSelect(e as unknown as React.SyntheticEvent<HTMLTextAreaElement>);
+                  }
+                }}
                 readOnly={isReadOnly}
                 style={{
                   fontSize: isMobileView ? '0.875rem' : '1rem',

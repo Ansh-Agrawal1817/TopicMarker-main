@@ -2,58 +2,57 @@
   {
     "name": "Ajay Antil",
     "role": "",
-    "about": "AI researcher specializing in natural language processing and knowledge retrieval systems.",
-    "linkedin_url": "https://linkedin.com/in/samrodriguez",
-    "github_url": "https://github.com/samrodriguez",
-    "image_url": "/team/sam-rodriguez.jpg"
+    "about": "Worked on integrating LLM APIs and building the content generation pipeline for TopicMarker.",
+    "linkedin_url": "",
+    "github_url": "",
+    "image_url": ""
   },
   {
     "name": "Aryan Kadian",
     "role": "",
-    "about": "UX specialist focused on creating intuitive interfaces for complex knowledge systems.",
-    "linkedin_url": "https://linkedin.com/in/jamielee",
-    "github_url": "https://github.com/jamielee",
-    "image_url": "/team/jamie-lee.jpg"
+    "about": "Designed the UI/UX for the lesson plan editor and topic hierarchy visualization.",
+    "linkedin_url": "",
+    "github_url": "",
+    "image_url": ""
   },
-  
   {
     "name": "Ansh",
     "role": "",
-    "about": "Full-stack developer with expertise in React and modern web technologies.",
-    "linkedin_url": "https://linkedin.com/in/taylormorgan",
-    "github_url": "https://github.com/taylormorgan",
-    "image_url": "/team/taylor-morgan.jpg"
+    "about": "Built the React frontend components and implemented the MDX editor with live preview.",
+    "linkedin_url": "",
+    "github_url": "",
+    "image_url": ""
   },
   {
     "name": "Vishal Parida",
     "role": "",
-    "about": "Machine learning specialist with a focus on large language models and RAG systems.",
-    "linkedin_url": "https://linkedin.com/in/jordanpatel",
-    "github_url": "https://github.com/jordanpatel",
-    "image_url": "/team/jordan-patel.jpg"
+    "about": "Developed the backend content generation service using Gemini LLM and Crawl4AI.",
+    "linkedin_url": "",
+    "github_url": "",
+    "image_url": ""
   },
   {
     "name": "Manish Kumar",
     "role": "",
-    "about": "Former educator with a passion for making knowledge accessible to everyone.",
-    "linkedin_url": "https://linkedin.com/in/alexjohnson",
-    "github_url": "https://github.com/alexjohnson",
-    "image_url": "/team/alex-johnson.jpg"
+    "about": "Set up the backend infrastructure with Hono, Drizzle ORM, and integrated Kinde authentication.",
+    "linkedin_url": "",
+    "github_url": "",
+    "image_url": ""
   },
   {
     "name": "Arjun Kunwar",
     "role": "",
-    "about": "Former curriculum designer helping to shape our educational content strategy.",
-    "linkedin_url": "https://linkedin.com/in/caseyzhang",
-    "github_url": "https://github.com/caseyzhang",
-    "image_url": "/team/casey-zhang.jpg"
+    "about": "Contributed to the database schema design and lesson plan management features.",
+    "linkedin_url": "",
+    "github_url": "",
+    "image_url": ""
   },
-   {
+  {
     "name": "Jovial Kanwadia",
     "role": "",
-    "about": "Former curriculum designer helping to shape our educational content strategy.",
-    "linkedin_url": "https://linkedin.com/in/caseyzhang",
-    "github_url": "https://github.com/caseyzhang",
-    "image_url": "/team/casey-zhang.jpg"
+    "about": "Worked on the web scraping integration and content refinement features.",
+    "linkedin_url": "",
+    "github_url": "",
+    "image_url": ""
   }
 ]

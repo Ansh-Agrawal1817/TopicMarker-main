@@ -23,14 +23,10 @@ function NavBar() {
   // Use our auth context
   const { user, isAuthenticated, isLoading, logout } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [windowWidth, setWindowWidth] = useState(
-    typeof window !== 'undefined' ? window.innerWidth : 0
-  );
 
-  // Handle window resize
+  // Handle window resize - close mobile menu on desktop
   useEffect(() => {
     const handleResize = () => {
-      setWindowWidth(window.innerWidth);
       if (window.innerWidth >= 768) {
         setIsMobileMenuOpen(false);
       }
@@ -41,33 +37,36 @@ function NavBar() {
   }, []);
 
   // Navigation links component to avoid repetition
-  const NavLinks = () => (
+  const NavLinks = ({ isMobile = false }: { isMobile?: boolean }) => (
     <>
-      <Link to="/about" className="[&.active]:font-bold text-sm sm:text-base hover:text-primary transition-colors py-2">
-        About
-      </Link>
-      {/* MDX Public route is accessible to everyone */}
-      <Link to="/mdxPublic" className="[&.active]:font-bold text-sm sm:text-base hover:text-primary transition-colors py-2">
-        MDX Public
-      </Link>
-
       {/* Only show authenticated routes when logged in */}
       {isAuthenticated && (
         <>
           <Link to="/dashboard" className="[&.active]:font-bold text-sm sm:text-base hover:text-primary transition-colors py-2">
             Dashboard
           </Link>
-          <Link to="/mdx" className="[&.active]:font-bold text-sm sm:text-base hover:text-primary transition-colors py-2">
-            MDX Editor
-          </Link>
           <Link to="/lesson-plan" className="[&.active]:font-bold text-sm sm:text-base hover:text-primary transition-colors py-2">
             Lesson Plan
+          </Link>
+          <Link to="/mdx" className="[&.active]:font-bold text-sm sm:text-base hover:text-primary transition-colors py-2">
+            MDX Editor
           </Link>
           <Link to="/public-lessons" className="[&.active]:font-bold text-sm sm:text-base hover:text-primary transition-colors py-2">
             Public Lessons
           </Link>
+          {/* Separator between authenticated and public routes */}
+          {!isMobile && <span className="hidden md:block w-px h-5 bg-border mx-1" />}
+          {isMobile && <hr className="border-border my-2" />}
         </>
       )}
+
+      {/* Public routes - accessible to everyone */}
+      <Link to="/mdxPublic" className="[&.active]:font-bold text-sm sm:text-base hover:text-primary transition-colors py-2">
+        MDX Public
+      </Link>
+      <Link to="/about" className="[&.active]:font-bold text-sm sm:text-base hover:text-primary transition-colors py-2">
+        About
+      </Link>
     </>
   );
 
@@ -121,7 +120,7 @@ function NavBar() {
 
         {/* Desktop Navigation */}
         <div className="hidden md:flex md:items-center md:gap-4 lg:gap-6">
-          <NavLinks />
+          <NavLinks isMobile={false} />
           <div className="ml-2">
             <AuthButtons />
           </div>
@@ -157,7 +156,7 @@ function NavBar() {
                 </button>
               </div>
               <div className="flex flex-col gap-4 sm:gap-6 p-4 sm:p-6 text-base sm:text-lg">
-                <NavLinks />
+                <NavLinks isMobile={true} />
                 <div className="mt-2 sm:mt-4">
                   <AuthButtons />
                 </div>

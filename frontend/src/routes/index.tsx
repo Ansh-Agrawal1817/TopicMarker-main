@@ -60,7 +60,7 @@ function Home() {
                 </p>
                 <p className="text-xl text-muted-foreground mb-8 max-w-xl">
                   The intelligent platform for creating structured lesson plans with rich MDX content,
-                  powered by advanced RAG technology.
+                  powered by AI and real-time web content.
                 </p>
               </div>
 
@@ -173,9 +173,9 @@ function Home() {
               <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
                 <Code className="h-6 w-6 text-primary" />
               </div>
-              <h3 className="text-xl font-semibold mb-2">RAG Technology</h3>
+              <h3 className="text-xl font-semibold mb-2">Smart Web Scraping</h3>
               <p className="text-muted-foreground">
-                Leverage Retrieval Augmented Generation to create high-quality content automatically
+                Generate up-to-date content by intelligently crawling and processing relevant web sources
               </p>
             </div>
 
@@ -240,7 +240,7 @@ function Home() {
               </div>
               <h3 className="text-xl font-semibold mb-2">Generate MDX Content</h3>
               <p className="text-muted-foreground">
-                Use our RAG technology to automatically generate rich content for each topic
+                Use web crawling, URLs, or LLM-only modes to generate rich content for each topic
               </p>
             </div>
 
@@ -311,12 +311,12 @@ function Home() {
                   <Sparkles className="h-6 w-6 text-primary" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-semibold mb-2">3. Generate Content with RAG</h3>
+                  <h3 className="text-xl font-semibold mb-2">3. Generate Content with AI</h3>
                   <p className="text-muted-foreground mb-3">
                     Select a topic or subtopic from the hierarchy, then use one of the three content generation methods:
                   </p>
                   <ul className="text-muted-foreground list-disc pl-5 space-y-1">
-                    <li>Web Crawling: Automatically searches and retrieves relevant content from the web</li>
+                    <li>Web Crawling: SERP API finds relevant pages, Crawl4AI scrapes content, Gemini generates MDX</li>
                     <li>URL-based: Generate content from specific URLs you provide</li>
                     <li>LLM-only: Create content using only the language model's knowledge</li>
                   </ul>
@@ -390,7 +390,7 @@ function Home() {
                   <div>
                     <h4 className="font-medium mb-1">Content Generation</h4>
                     <p className="text-muted-foreground text-sm">
-                      Our RAG system combines web content with LLM capabilities to ensure up-to-date and accurate information. For the most current content, use the web crawling or URL-based methods.
+                      Our system combines real-time web scraping with LLM capabilities to ensure up-to-date and accurate information. For the most current content, use the web crawling or URL-based methods.
                     </p>
                   </div>
                   <div>

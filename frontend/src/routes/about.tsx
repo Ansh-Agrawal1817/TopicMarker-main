@@ -46,7 +46,7 @@ function About() {
                   Topic Marker began with a simple observation: creating well-structured educational content is time-consuming and often challenging, especially when trying to maintain consistency and quality across multiple topics.
                 </p>
                 <p>
-                  Our platform was built to address this challenge by combining the power of Retrieval Augmented Generation (RAG) technology with an intuitive interface for organizing and sharing knowledge.
+                  Our platform was built to address this challenge by combining intelligent web scraping with powerful LLM technology, along with an intuitive interface for organizing and sharing knowledge.
                 </p>
                 <p>
                   What started as a tool for educators quickly evolved into a comprehensive platform that serves content creators, researchers, and knowledge workers across various domains.
@@ -144,10 +144,10 @@ function About() {
                   Topic Marker is built on a modern tech stack that combines the best of frontend and backend technologies to deliver a seamless user experience.
                 </p>
                 <p>
-                  At the core of our platform is our proprietary RAG (Retrieval Augmented Generation) system that intelligently generates high-quality MDX content based on topics and subtopics.
+                  Our content generation system uses a hierarchy-based approach: first, an LLM generates a structured topic hierarchy, then for each topic you select, we offer three powerful generation modes.
                 </p>
                 <p>
-                  While LLMs are powerful, they often lack up-to-date knowledge for all topics. Our RAG system addresses this by fetching relevant URLs, scraping the latest content, and feeding it to the LLM as context. This ensures that the generated content is both accurate and current.
+                  While LLMs are powerful, they often lack up-to-date knowledge for all topics. Our web crawling mode addresses this by using SERP API to find the most relevant websites, Crawl4AI to scrape their content, and Google Gemini to generate accurate MDX content using this fresh context.
                 </p>
                 <p>
                   We leverage the power of React and TanStack Router for our frontend, with Hono and Drizzle ORM powering our backend services. This combination allows us to deliver a fast, responsive, and reliable platform.

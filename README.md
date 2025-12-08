@@ -5,13 +5,13 @@
   <h3>Create, manage, and share lesson plans with AI-powered content generation</h3>
 </div>
 
-Topic Marker is a modern web application that leverages AI to help users create, manage, and share lesson plans with rich MDX content. The platform integrates with a RAG (Retrieval Augmented Generation) backend to intelligently generate high-quality content based on topics and subtopics.
+Topic Marker is a modern web application that leverages AI to help users create, manage, and share lesson plans with rich MDX content. The platform uses intelligent web scraping and LLM technology to generate high-quality, up-to-date content based on topics and subtopics.
 
 ## ✨ Features
 
 - **Topic Hierarchy Management**: Create and organize topics and subtopics in a hierarchical structure
 - **AI-Powered Content Generation**: Generate MDX content using different methods:
-  - RAG-based content generation with web crawling
+  - Web crawling with SERP API and Crawl4AI
   - URL-based content generation
   - LLM-only content generation
 - **Content Refinement**: Refine generated content using selection, crawling, or URLs
@@ -21,13 +21,22 @@ Topic Marker is a modern web application that leverages AI to help users create,
 - **User Authentication**: Secure user authentication and authorization via Kinde
 - **User Dashboard**: Manage your saved lesson plans
 
+## 🔄 How Content Generation Works
+
+1. **Topic Hierarchy Generation**: When you search for a topic, the LLM generates a structured hierarchy of related topics and subtopics
+2. **Content Generation**: Select any topic from the hierarchy and choose one of three generation modes:
+   - **Web Crawling**: SERP API finds the most relevant websites, Crawl4AI scrapes their content, and Gemini LLM generates MDX using this fresh context
+   - **URL-Based**: Provide specific URLs, Crawl4AI scrapes their content, and Gemini LLM generates MDX from that content
+   - **LLM-Only**: Gemini LLM generates content using only its training knowledge (useful for well-established topics)
+3. **Refinement**: Further improve your content by selecting text and using AI-powered refinement with additional web context or LLM assistance
+
 ## 🚀 Getting Started
 
 ### Prerequisites
 
 - [Bun](https://bun.sh/) (JavaScript runtime & package manager)
 - PostgreSQL database
-- [TopicMarker-RAG](https://github.com/aryankad1an/TopicMarker-RAG) backend service running on http://127.0.0.1:8000
+- Backend service running (provides content generation APIs)
 
 ### Environment Setup
 
@@ -97,12 +106,11 @@ cd frontend && bun dev
 - **Styling**: [Tailwind CSS](https://tailwindcss.com/)
 - **MDX Rendering**: Custom MDX renderer
 
-### RAG Integration
-- **Backend**: [TopicMarker-RAG](https://github.com/aryankad1an/TopicMarker-RAG) - A powerful Retrieval-Augmented Generation backend
+### Content Generation Service
 - **Framework**: [FastAPI](https://fastapi.tiangolo.com/)
 - **LLM**: [Google Gemini](https://ai.google.dev/)
-- **Vector Database**: [Pinecone](https://www.pinecone.io/)
-- **Web Crawling**: [crawl4ai](https://github.com/crawl4ai/crawl4ai)
+- **Web Search**: [SERP API](https://serpapi.com/) - For finding relevant web pages
+- **Web Scraping**: [Crawl4AI](https://github.com/crawl4ai/crawl4ai) - For extracting content from websites
 - **LLM Framework**: [LangChain](https://www.langchain.com/)
 
 ## 📦 Project Structure
@@ -122,15 +130,15 @@ topic-marker/
 └── drizzle/              # Database migrations
 ```
 
-## 🔌 RAG Integration API
+## 🔌 Content Generation API
 
-The application integrates with the [TopicMarker-RAG](https://github.com/yourusername/TopicMarker-RAG) backend that provides the following key endpoints:
+The application integrates with a backend service that provides the following key endpoints:
 
 ### Topic Generation
-- **POST /rag/search-topics** - Generates a structured hierarchy of topics and subtopics
+- **POST /rag/search-topics** - Generates a structured hierarchy of topics and subtopics using LLM
 
 ### MDX Generation
-- **POST /rag/single-topic** - Generates MDX content using web crawling
+- **POST /rag/single-topic** - Generates MDX content using web crawling (SERP API + Crawl4AI + Gemini)
 - **POST /rag/generate-mdx-llm-only** - Generates MDX content using only LLM knowledge
 - **POST /rag/generate-mdx-from-urls** - Generates MDX content from specific URLs
 
@@ -143,9 +151,13 @@ Each endpoint has a corresponding `-raw` version that returns plain text instead
 
 ## 🚢 Deployment
 
-The application is configured for deployment on [Fly.io](https://fly.io/):
+The application is configured for deployment on [Vercel](https://vercel.com/) or [Fly.io](https://fly.io/):
 
 ```bash
+# For Vercel
+vercel deploy
+
+# For Fly.io
 fly deploy
 ```
 
