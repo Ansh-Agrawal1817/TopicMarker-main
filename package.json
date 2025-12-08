@@ -11,6 +11,8 @@
   "devDependencies": {
     "@flydotio/dockerfile": "latest",
     "@types/bun": "latest",
+    "@types/pg": "^8.11.0",
+    "@vercel/node": "^3.0.0",
     "drizzle-kit": "^0.20.14"
   },
   "peerDependencies": {

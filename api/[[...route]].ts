@@ -4,10 +4,10 @@ import { logger } from "hono/logger";
 import { cors } from "hono/cors";
 
 // Import routes from server
-import { authRoute } from "../../server/routes/auth";
-import { topicsRoute } from "../../server/routes/topics";
-import { ragRoute } from "../../server/routes/rag";
-import { lessonPlansRoute } from "../../server/routes/lessonPlans";
+import { authRoute } from "../server/routes/auth";
+import { topicsRoute } from "../server/routes/topics";
+import { ragRoute } from "../server/routes/rag";
+import { lessonPlansRoute } from "../server/routes/lessonPlans";
 
 // Set runtime to edge for better performance (optional, can use nodejs too)
 export const config = {
