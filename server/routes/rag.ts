@@ -3,8 +3,12 @@ import { z } from "zod";
 import { zValidator } from "@hono/zod-validator";
 import { getUser } from "../kinde";
 
-// Base RAG service URL
-const RAG_SERVICE_URL = "http://127.0.0.1:8000";
+// RAG Service URL Priority:
+// 1. If LOCAL_RAG_URL is set in .env, use it (for local development)
+// 2. Otherwise, use DEPLOYED_RAG_URL from .env (Modal deployment)
+const RAG_SERVICE_URL = process.env.LOCAL_RAG_URL || process.env.DEPLOYED_RAG_URL || "https://manishk5507--topicmarker-rag-fastapi-app.modal.run";
+
+console.log(`🔗 RAG Service: ${RAG_SERVICE_URL} (${process.env.LOCAL_RAG_URL ? "LOCAL" : "DEPLOYED"})`);
 
 // Schema for topic search
 const searchTopicsSchema = z.object({
