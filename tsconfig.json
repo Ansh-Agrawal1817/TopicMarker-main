@@ -9,11 +9,22 @@
     "skipLibCheck": true,
     "strict": false,
     "noImplicitAny": false,
+    "strictNullChecks": false,
+    "strictFunctionTypes": false,
+    "strictPropertyInitialization": false,
+    "noImplicitThis": false,
+    "alwaysStrict": false,
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
     "types": ["bun-types"]
   },
   "include": ["api/**/*", "server/**/*"],
-  "exclude": ["node_modules", "frontend"]
+  "exclude": ["node_modules", "frontend"],
+  "ts-node": {
+    "transpileOnly": true,
+    "compilerOptions": {
+      "module": "commonjs"
+    }
+  }
 }
