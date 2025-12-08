@@ -83,7 +83,7 @@ export default async function handler(req, res) {
       const db = await getDb();
       const users = await db`SELECT id, given_name, family_name FROM users WHERE id = ${userId} LIMIT 1`;
       if (!users.length) return res.status(404).json({ error: "User not found" });
-      return res.status(200).json({ user: { id: users[0].id, given_name: users[0].given_name, family_name: users[0].family_name } });
+      return res.status(200).json({ user: toCamelCase(users[0]) });
     }
 
     // ============ TOPICS ROUTES ============
@@ -95,7 +95,7 @@ export default async function handler(req, res) {
       // GET /api/topics - list all
       if (path === "/api/topics" && req.method === "GET") {
         const topics = await db`SELECT * FROM topics WHERE user_id = ${user.id} ORDER BY created_at DESC LIMIT 100`;
-        return res.status(200).json({ topics });
+        return res.status(200).json({ topics: toCamelCase(topics) });
       }
 
       // POST /api/topics - create
@@ -105,21 +105,21 @@ export default async function handler(req, res) {
           INSERT INTO topics (user_id, axios_wing, topic, difficulty, mdx_content, main_topic, parent_topic, is_subtopic)
           VALUES (${user.id}, ${body.axiosWing}, ${body.topic}, ${body.difficulty}, ${body.mdxContent}, ${body.mainTopic || null}, ${body.parentTopic || null}, ${body.isSubtopic || false})
           RETURNING *`;
-        return res.status(201).json(result[0]);
+        return res.status(201).json(toCamelCase(result[0]));
       }
 
       // GET /api/topics/by-difficulty/:difficulty
       if (path.match(/\/api\/topics\/by-difficulty\/\w+/)) {
         const difficulty = pathParts[pathParts.length - 1];
         const topics = await db`SELECT * FROM topics WHERE user_id = ${user.id} AND difficulty = ${difficulty} ORDER BY created_at DESC`;
-        return res.status(200).json({ topics });
+        return res.status(200).json({ topics: toCamelCase(topics) });
       }
 
       // GET /api/topics/by-wing/:wing
       if (path.match(/\/api\/topics\/by-wing\/\w+/)) {
         const wing = pathParts[pathParts.length - 1];
         const topics = await db`SELECT * FROM topics WHERE user_id = ${user.id} AND axios_wing = ${wing} ORDER BY created_at DESC`;
-        return res.status(200).json({ topics });
+        return res.status(200).json({ topics: toCamelCase(topics) });
       }
 
       // GET/PUT/DELETE /api/topics/:id
@@ -130,7 +130,7 @@ export default async function handler(req, res) {
         if (req.method === "GET") {
           const topics = await db`SELECT * FROM topics WHERE user_id = ${user.id} AND id = ${id} LIMIT 1`;
           if (!topics.length) return res.status(404).json({ error: "Not found" });
-          return res.status(200).json({ topic: topics[0] });
+          return res.status(200).json({ topic: toCamelCase(topics[0]) });
         }
         
         if (req.method === "PUT") {
@@ -141,13 +141,13 @@ export default async function handler(req, res) {
             is_subtopic = ${body.isSubtopic || false}, updated_at = NOW()
             WHERE user_id = ${user.id} AND id = ${id} RETURNING *`;
           if (!result.length) return res.status(404).json({ error: "Not found" });
-          return res.status(200).json({ topic: result[0] });
+          return res.status(200).json({ topic: toCamelCase(result[0]) });
         }
         
         if (req.method === "DELETE") {
           const result = await db`DELETE FROM topics WHERE user_id = ${user.id} AND id = ${id} RETURNING *`;
           if (!result.length) return res.status(404).json({ error: "Not found" });
-          return res.status(200).json({ topic: result[0] });
+          return res.status(200).json({ topic: toCamelCase(result[0]) });
         }
       }
     }
@@ -156,10 +156,21 @@ export default async function handler(req, res) {
     if (path.match(/\/api\/lessonPlans/)) {
       const db = await getDb();
 
+      // Helper to parse and convert lesson plan
+      const parseLessonPlan = (plan) => {
+        if (!plan) return plan;
+        const converted = toCamelCase(plan);
+        // Ensure topics is an array (parse if string)
+        if (typeof converted.topics === 'string') {
+          converted.topics = JSON.parse(converted.topics);
+        }
+        return converted;
+      };
+
       // GET /api/lessonPlans/public - no auth needed
       if (path === "/api/lessonPlans/public" && req.method === "GET") {
         const plans = await db`SELECT * FROM lesson_plans WHERE is_public = true ORDER BY created_at DESC LIMIT 100`;
-        return res.status(200).json({ lessonPlans: plans });
+        return res.status(200).json({ lessonPlans: plans.map(parseLessonPlan) });
       }
 
       // GET /api/lessonPlans/public/:id - no auth needed
@@ -168,7 +179,7 @@ export default async function handler(req, res) {
         const id = parseInt(publicIdMatch[1]);
         const plans = await db`SELECT * FROM lesson_plans WHERE id = ${id} AND is_public = true LIMIT 1`;
         if (!plans.length) return res.status(404).json({ error: "Not found" });
-        return res.status(200).json(plans[0]);
+        return res.status(200).json(parseLessonPlan(plans[0]));
       }
 
       // GET /api/lessonPlans/check-public/:id - no auth needed
@@ -187,7 +198,7 @@ export default async function handler(req, res) {
       // GET /api/lessonPlans - list user's plans
       if (path === "/api/lessonPlans" && req.method === "GET") {
         const plans = await db`SELECT * FROM lesson_plans WHERE user_id = ${user.id} ORDER BY created_at DESC LIMIT 100`;
-        return res.status(200).json({ lessonPlans: plans });
+        return res.status(200).json({ lessonPlans: plans.map(parseLessonPlan) });
       }
 
       // POST /api/lessonPlans - create
@@ -197,7 +208,7 @@ export default async function handler(req, res) {
           INSERT INTO lesson_plans (user_id, name, main_topic, topics, is_public)
           VALUES (${user.id}, ${body.name}, ${body.mainTopic}, ${JSON.stringify(body.topics)}, ${body.isPublic || false})
           RETURNING *`;
-        return res.status(201).json(result[0]);
+        return res.status(201).json(parseLessonPlan(result[0]));
       }
 
       // GET/PUT/DELETE /api/lessonPlans/:id
@@ -208,7 +219,7 @@ export default async function handler(req, res) {
         if (req.method === "GET") {
           const plans = await db`SELECT * FROM lesson_plans WHERE user_id = ${user.id} AND id = ${id} LIMIT 1`;
           if (!plans.length) return res.status(404).json({ error: "Not found" });
-          return res.status(200).json(plans[0]);
+          return res.status(200).json(parseLessonPlan(plans[0]));
         }
         
         if (req.method === "PUT") {
@@ -218,7 +229,7 @@ export default async function handler(req, res) {
             topics = ${JSON.stringify(body.topics)}, is_public = ${body.isPublic || false}, updated_at = NOW()
             WHERE user_id = ${user.id} AND id = ${id} RETURNING *`;
           if (!result.length) return res.status(404).json({ error: "Not found" });
-          return res.status(200).json(result[0]);
+          return res.status(200).json(parseLessonPlan(result[0]));
         }
         
         if (req.method === "DELETE") {
@@ -268,6 +279,26 @@ export default async function handler(req, res) {
 }
 
 // ============ HELPERS ============
+
+// Convert snake_case to camelCase
+function snakeToCamel(str) {
+  return str.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
+}
+
+// Convert object keys from snake_case to camelCase
+function toCamelCase(obj) {
+  if (Array.isArray(obj)) {
+    return obj.map(toCamelCase);
+  }
+  if (obj !== null && typeof obj === 'object') {
+    return Object.keys(obj).reduce((acc, key) => {
+      const camelKey = snakeToCamel(key);
+      acc[camelKey] = toCamelCase(obj[key]);
+      return acc;
+    }, {});
+  }
+  return obj;
+}
 
 async function getBody(req) {
   if (req.body) return typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
