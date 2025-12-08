@@ -1,22 +1,17 @@
 {
   "compilerOptions": {
-    "lib": ["ESNext"],
-    "target": "ESNext",
+    "target": "ES2020",
     "module": "ESNext",
-    "moduleDetection": "force",
-    "jsx": "react-jsx",
-    "allowJs": true,
-
-    /* Bundler mode */
-    "moduleResolution": "bundler",
-    "allowImportingTsExtensions": true,
-    "verbatimModuleSyntax": true,
-    "noEmit": true,
-
-    /* Linting */
+    "lib": ["ES2020"],
+    "moduleResolution": "node",
+    "esModuleInterop": true,
     "skipLibCheck": true,
-    "strict": true,
-    "noFallthroughCasesInSwitch": true,
-    "forceConsistentCasingInFileNames": true
-  }
+    "strict": false,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "types": ["bun-types"]
+  },
+  "include": ["api/**/*", "server/**/*"],
+  "exclude": ["node_modules", "frontend"]
 }
