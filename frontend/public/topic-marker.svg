@@ -1,30 +1,15 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
-  <!-- Main bookmark/marker shape -->
-  <path d="M14 6C14 4.34315 15.3431 3 17 3H47C48.6569 3 50 4.34315 50 6V56.5858C50 58.8457 47.3457 60.0858 45.6569 58.3969L32 44.74L18.3431 58.3969C16.6543 60.0858 14 58.8457 14 56.5858V6Z" fill="url(#bookmarkGradient)"/>
+  <!-- Main bookmark shape - white -->
+  <path d="M14 6C14 4.34315 15.3431 3 17 3H47C48.6569 3 50 4.34315 50 6V56.5858C50 58.8457 47.3457 60.0858 45.6569 58.3969L32 44.74L18.3431 58.3969C16.6543 60.0858 14 58.8457 14 56.5858V6Z" fill="white"/>
   
-  <!-- Inner glow effect -->
-  <path d="M18 10C18 8.89543 18.8954 8 20 8H44C45.1046 8 46 8.89543 46 10V48L32 36L18 48V10Z" fill="url(#innerGlow)" opacity="0.6"/>
+  <!-- Inner dark area -->
+  <path d="M18 9C18 7.89543 18.8954 7 20 7H44C45.1046 7 46 7.89543 46 9V49L32 37L18 49V9Z" fill="#1a1a1a"/>
   
-  <!-- Stylized "T" for Topic -->
-  <rect x="22" y="16" width="20" height="4" rx="2" fill="white"/>
-  <rect x="30" y="16" width="4" height="20" rx="2" fill="white"/>
+  <!-- Stylized "T" for Topic - white on dark -->
+  <rect x="22" y="15" width="20" height="3.5" rx="1.75" fill="white"/>
+  <rect x="30" y="15" width="4" height="18" rx="2" fill="white"/>
   
-  <!-- Marker dot accent -->
-  <circle cx="44" cy="12" r="6" fill="#F472B6"/>
-  <circle cx="44" cy="12" r="3" fill="#FB7185"/>
-  
-  <!-- Subtle shine -->
-  <ellipse cx="24" cy="14" rx="4" ry="2" fill="white" opacity="0.3"/>
-  
-  <defs>
-    <linearGradient id="bookmarkGradient" x1="14" y1="3" x2="50" y2="60" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#818CF8"/>
-      <stop offset="40%" stop-color="#6366F1"/>
-      <stop offset="100%" stop-color="#4F46E5"/>
-    </linearGradient>
-    <linearGradient id="innerGlow" x1="18" y1="8" x2="46" y2="48" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#A5B4FC"/>
-      <stop offset="100%" stop-color="#6366F1"/>
-    </linearGradient>
-  </defs>
+  <!-- Marker dot accent - white -->
+  <circle cx="44" cy="11" r="5" fill="white"/>
+  <circle cx="44" cy="11" r="2.5" fill="#1a1a1a"/>
 </svg>
