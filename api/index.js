@@ -106,6 +106,7 @@ async function getKindeClient() {
 // Cookie-based session manager
 function createCookieSessionManager(req, res) {
   const cookies = parseCookies(req.headers.cookie || "");
+  const cookiesToSet = []; // Accumulate cookies to set
   
   return {
     async getSessionItem(key) {
@@ -113,15 +114,20 @@ function createCookieSessionManager(req, res) {
     },
     async setSessionItem(key, value) {
       const val = typeof value === "string" ? value : JSON.stringify(value);
-      res.setHeader("Set-Cookie", `${key}=${val}; HttpOnly; Secure; SameSite=Lax; Path=/`);
+      cookiesToSet.push(`${key}=${val}; HttpOnly; Secure; SameSite=Lax; Path=/`);
+      // Set all accumulated cookies
+      res.setHeader("Set-Cookie", cookiesToSet);
     },
     async removeSessionItem(key) {
-      res.setHeader("Set-Cookie", `${key}=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0`);
+      cookiesToSet.push(`${key}=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0`);
+      res.setHeader("Set-Cookie", cookiesToSet);
     },
     async destroySession() {
-      const keys = ["id_token", "access_token", "user", "refresh_token"];
-      const setCookies = keys.map(key => `${key}=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0`);
-      res.setHeader("Set-Cookie", setCookies);
+      const keys = ["id_token", "access_token", "user", "refresh_token", "ac-state-key"];
+      keys.forEach(key => {
+        cookiesToSet.push(`${key}=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0`);
+      });
+      res.setHeader("Set-Cookie", cookiesToSet);
     },
   };
 }
