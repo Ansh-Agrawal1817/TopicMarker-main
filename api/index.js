@@ -1,26 +1,91 @@
-// Vercel API route with Hono
-import { Hono } from "hono";
-import { handle } from "hono/vercel";
-import { cors } from "hono/cors";
+// Plain JavaScript Vercel API - no frameworks
+export default async function handler(req, res) {
+  // Set CORS headers
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+  
+  if (req.method === "OPTIONS") {
+    return res.status(200).end();
+  }
 
-const app = new Hono().basePath("/api");
+  const path = req.url?.split("?")[0] || "";
+  
+  try {
+    // Debug endpoint - no dependencies
+    if (path.includes("/debug")) {
+      return res.status(200).json({
+        status: "ok",
+        timestamp: new Date().toISOString(),
+        path: path,
+        hasKindeDomain: !!process.env.KINDE_DOMAIN,
+        hasKindeClientId: !!process.env.KINDE_CLIENT_ID,
+        hasKindeClientSecret: !!process.env.KINDE_CLIENT_SECRET,
+        hasKindeRedirectUri: !!process.env.KINDE_REDIRECT_URI,
+        hasKindeLogoutRedirectUri: !!process.env.KINDE_LOGOUT_REDIRECT_URI,
+        hasDatabaseUrl: !!process.env.DATABASE_URL,
+      });
+    }
 
-// Enable CORS
-app.use("*", cors());
+    // Login endpoint
+    if (path.includes("/login")) {
+      const kindeClient = await getKindeClient();
+      const sessionManager = createCookieSessionManager(req, res);
+      const loginUrl = await kindeClient.login(sessionManager);
+      res.setHeader("Location", loginUrl.toString());
+      return res.status(302).end();
+    }
 
-// Debug endpoint
-app.get("/debug", (c) => {
-  return c.json({
-    status: "ok",
-    timestamp: new Date().toISOString(),
-    hasKindeDomain: !!process.env.KINDE_DOMAIN,
-    hasKindeClientId: !!process.env.KINDE_CLIENT_ID,
-    hasKindeClientSecret: !!process.env.KINDE_CLIENT_SECRET,
-    hasKindeRedirectUri: !!process.env.KINDE_REDIRECT_URI,
-    hasKindeLogoutRedirectUri: !!process.env.KINDE_LOGOUT_REDIRECT_URI,
-    hasDatabaseUrl: !!process.env.DATABASE_URL,
-  });
-});
+    // Register endpoint
+    if (path.includes("/register")) {
+      const kindeClient = await getKindeClient();
+      const sessionManager = createCookieSessionManager(req, res);
+      const registerUrl = await kindeClient.register(sessionManager);
+      res.setHeader("Location", registerUrl.toString());
+      return res.status(302).end();
+    }
+
+    // Callback endpoint
+    if (path.includes("/callback")) {
+      const kindeClient = await getKindeClient();
+      const sessionManager = createCookieSessionManager(req, res);
+      const fullUrl = `https://${req.headers.host}${req.url}`;
+      await kindeClient.handleRedirectToApp(sessionManager, new URL(fullUrl));
+      res.setHeader("Location", "/");
+      return res.status(302).end();
+    }
+
+    // Logout endpoint
+    if (path.includes("/logout")) {
+      const kindeClient = await getKindeClient();
+      const sessionManager = createCookieSessionManager(req, res);
+      const logoutUrl = await kindeClient.logout(sessionManager);
+      res.setHeader("Location", logoutUrl.toString());
+      return res.status(302).end();
+    }
+
+    // Me endpoint
+    if (path.includes("/me")) {
+      const kindeClient = await getKindeClient();
+      const sessionManager = createCookieSessionManager(req, res);
+      const isAuthenticated = await kindeClient.isAuthenticated(sessionManager);
+      if (!isAuthenticated) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      const user = await kindeClient.getUserProfile(sessionManager);
+      return res.status(200).json({ user });
+    }
+
+    return res.status(404).json({ error: "Not found", path });
+  } catch (error) {
+    console.error("API Error:", error);
+    return res.status(500).json({ 
+      error: "Server error", 
+      message: error.message,
+      stack: error.stack 
+    });
+  }
+}
 
 // Lazy Kinde client
 let _kindeClient = null;
@@ -38,93 +103,36 @@ async function getKindeClient() {
   return _kindeClient;
 }
 
-// Session manager helper
-import { getCookie, setCookie, deleteCookie } from "hono/cookie";
-
-function createSessionManager(c) {
+// Cookie-based session manager
+function createCookieSessionManager(req, res) {
+  const cookies = parseCookies(req.headers.cookie || "");
+  
   return {
     async getSessionItem(key) {
-      return getCookie(c, key);
+      return cookies[key];
     },
     async setSessionItem(key, value) {
-      const cookieOptions = { httpOnly: true, secure: true, sameSite: "Lax" };
-      if (typeof value === "string") {
-        setCookie(c, key, value, cookieOptions);
-      } else {
-        setCookie(c, key, JSON.stringify(value), cookieOptions);
-      }
+      const val = typeof value === "string" ? value : JSON.stringify(value);
+      res.setHeader("Set-Cookie", `${key}=${val}; HttpOnly; Secure; SameSite=Lax; Path=/`);
     },
     async removeSessionItem(key) {
-      deleteCookie(c, key);
+      res.setHeader("Set-Cookie", `${key}=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0`);
     },
     async destroySession() {
-      ["id_token", "access_token", "user", "refresh_token"].forEach((key) => {
-        deleteCookie(c, key);
-      });
+      const keys = ["id_token", "access_token", "user", "refresh_token"];
+      const setCookies = keys.map(key => `${key}=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0`);
+      res.setHeader("Set-Cookie", setCookies);
     },
   };
 }
 
-// Auth routes
-app.get("/login", async (c) => {
-  try {
-    const kindeClient = await getKindeClient();
-    const sessionManager = createSessionManager(c);
-    const loginUrl = await kindeClient.login(sessionManager);
-    return c.redirect(loginUrl.toString());
-  } catch (error) {
-    return c.json({ error: "Login failed", message: error.message }, 500);
+function parseCookies(cookieHeader) {
+  const cookies = {};
+  if (cookieHeader) {
+    cookieHeader.split(";").forEach(cookie => {
+      const [name, ...rest] = cookie.split("=");
+      cookies[name.trim()] = rest.join("=").trim();
+    });
   }
-});
-
-app.get("/register", async (c) => {
-  try {
-    const kindeClient = await getKindeClient();
-    const sessionManager = createSessionManager(c);
-    const registerUrl = await kindeClient.register(sessionManager);
-    return c.redirect(registerUrl.toString());
-  } catch (error) {
-    return c.json({ error: "Register failed", message: error.message }, 500);
-  }
-});
-
-app.get("/callback", async (c) => {
-  try {
-    const kindeClient = await getKindeClient();
-    const sessionManager = createSessionManager(c);
-    const url = new URL(c.req.url);
-    await kindeClient.handleRedirectToApp(sessionManager, url);
-    return c.redirect("/");
-  } catch (error) {
-    return c.json({ error: "Callback failed", message: error.message }, 500);
-  }
-});
-
-app.get("/logout", async (c) => {
-  try {
-    const kindeClient = await getKindeClient();
-    const sessionManager = createSessionManager(c);
-    const logoutUrl = await kindeClient.logout(sessionManager);
-    return c.redirect(logoutUrl.toString());
-  } catch (error) {
-    return c.json({ error: "Logout failed", message: error.message }, 500);
-  }
-});
-
-app.get("/me", async (c) => {
-  try {
-    const kindeClient = await getKindeClient();
-    const sessionManager = createSessionManager(c);
-    const isAuthenticated = await kindeClient.isAuthenticated(sessionManager);
-    if (!isAuthenticated) {
-      return c.json({ error: "Unauthorized" }, 401);
-    }
-    const user = await kindeClient.getUserProfile(sessionManager);
-    return c.json({ user });
-  } catch (error) {
-    return c.json({ error: "Unauthorized", message: error.message }, 401);
-  }
-});
-
-// Export handler
-export default handle(app);
+  return cookies;
+}
